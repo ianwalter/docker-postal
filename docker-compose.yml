@@ -1,24 +1,16 @@
 version: "3"
+
+volumes:
+  postalAssets:
+
 services:
-  postal:
-    image: alinuxninja/postal
-    container_name: postal
-    command: run
-    ports:
-      - 127.0.0.1:80:5000
-      - 127.0.0.1:25:25
-    depends_on:
-      - "mysql"
-      - "rabbitmq"
+  nginx:
+    image: nginx
+    container_name: postal_nginx
+    ports: ["8080:8080"]
     volumes:
-      - ./data/postal/assets:/opt/postal/public/assets
-      - ./data/postal/config:/opt/postal/config
-    environment:
-      - MYSQL_ROOT_PASSWORD=changeme
-      - MYSQL_DATABASE=postal
-      - RABBITMQ_DEFAULT_USER=postal
-      - RABBITMQ_DEFAULT_PASS=changeme
-      - RABBITMQ_DEFAULT_VHOST=postal
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - postalAssets:/opt/postal/public
   mysql:
     image: mariadb:10
     container_name: postal_mysql
@@ -34,3 +26,18 @@ services:
       - RABBITMQ_DEFAULT_USER=postal
       - RABBITMQ_DEFAULT_PASS=changeme
       - RABBITMQ_DEFAULT_VHOST=/postal
+  postal:
+    build: .
+    container_name: postal
+    command: ./wrapper.sh run
+    ports: ["25:25", "5000:5000"]
+    depends_on: [nginx, mysql, rabbitmq]
+    volumes:
+      - postalAssets:/opt/postal/public
+    environment:
+      - POSTAL_HOST="localhost:8080"
+      - MYSQL_ROOT_PASSWORD=changeme
+      - MYSQL_DATABASE=postal
+      - RABBITMQ_DEFAULT_USER=postal
+      - RABBITMQ_DEFAULT_PASS=changeme
+      - RABBITMQ_DEFAULT_VHOST=postal

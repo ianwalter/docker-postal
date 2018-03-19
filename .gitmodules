@@ -1,0 +1,3 @@
+[submodule "postal"]
+	path = postal
+	url = git@github.com:atech/postal.git
